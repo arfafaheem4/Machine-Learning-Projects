@@ -1,0 +1,64 @@
+import os
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+tumor_path = "/content/drive/MyDrive/brain_tumor/yes"
+no_tumor_path = "/content/drive/MyDrive/brain_tumor/no"
+
+X = []
+y = []
+
+
+for img_name in os.listdir(tumor_path):
+    img = cv2.imread(os.path.join(tumor_path, img_name))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.resize(img, (64, 64))
+    X.append(img.flatten())
+    y.append(1)
+
+
+for img_name in os.listdir(no_tumor_path):
+    img = cv2.imread(os.path.join(no_tumor_path, img_name))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.resize(img, (64, 64))
+    X.append(img.flatten())
+    y.append(0)
+
+
+X = np.array(X)
+y = np.array(y)
+
+print("Dataset shape:", X.shape, "Labels:", y.shape)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+
+svm = SVC(kernel='linear', random_state=42)
+svm.fit(X_train, y_train)
+
+y_pred = svm.predict(X_test)
+
+print("\nAccuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
+
+
+plt.figure(figsize=(10, 5))
+for i in range(6):
+    plt.subplot(2, 3, i+1)
+    img = X_test[i].reshape(64, 64)
+    plt.imshow(img, cmap='gray')
+    plt.title(f"Actual: {y_test[i]} | Predicted: {y_pred[i]}")
+    plt.axis('off')
+plt.tight_layout()
+plt.show()
